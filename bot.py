@@ -235,12 +235,21 @@ def clean_message(text: str) -> str:
     return result if result else "Привет! Хочу узнать что-то интересное."
 
 
+ALLOWED_GROUP = "@magiya_chisel8"
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
         return
 
+    chat = update.effective_chat
+    is_private = chat.type == "private"
+    is_allowed_group = chat.username and f"@{chat.username}".lower() == ALLOWED_GROUP.lower()
+
+    # Разрешаем только личку и чат "Магия цифр"
+    if not is_private and not is_allowed_group:
+        return
+
     original_text = update.message.text
-    is_private = update.effective_chat.type == "private"
     character = detect_character(original_text)
 
     # В личке отвечаем всегда (Астрологикус по умолчанию)
