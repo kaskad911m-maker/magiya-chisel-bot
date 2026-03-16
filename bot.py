@@ -11,17 +11,17 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 BOT_NAME = "Звёздный оракул"
 
 
 async def ask_ai(system_prompt: str, user_message: str) -> str:
     async with httpx.AsyncClient(timeout=90) as client:
         r = await client.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers={"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"},
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
             json={
-                "model": "gpt-4o-mini",
+                "model": "llama-3.3-70b-versatile",
                 "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_message}
@@ -29,9 +29,9 @@ async def ask_ai(system_prompt: str, user_message: str) -> str:
             }
         )
         d = r.json()
-        logger.info(f"OpenAI response status: {r.status_code}")
+        logger.info(f"Groq response status: {r.status_code}")
         if r.status_code != 200:
-            raise ValueError(f"OpenAI {r.status_code}: {d}")
+            raise ValueError(f"Groq {r.status_code}: {d}")
         return d["choices"][0]["message"]["content"]
 
 # Слова-триггеры для каждого персонажа
