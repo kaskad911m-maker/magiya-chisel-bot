@@ -187,14 +187,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     except Exception as e:
         logger.error(f"Ошибка: {e!r}")
-        if character == "guru":
-            await update.message.reply_text(
-                "🔮 Звёзды на секунду скрылись за облаками... Попробуй чуть позже!\nС верой в ваш путь… ✨"
-            )
-        else:
-            await update.message.reply_text(
-                "🕵️ Детектив Арви на связи. Связь прервалась — возобновляю через минуту."
-            )
+        await update.message.reply_text(f"DEBUG ERROR: {e!r}")
 
 
 def main():
