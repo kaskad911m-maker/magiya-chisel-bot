@@ -31,8 +31,7 @@ async def ask_ai(system_prompt: str, user_message: str) -> str:
         d = r.json()
         logger.info(f"OpenAI response status: {r.status_code}")
         if r.status_code != 200:
-            logger.error(f"OpenAI error: {d}")
-            return None
+            raise ValueError(f"OpenAI {r.status_code}: {d}")
         return d["choices"][0]["message"]["content"]
 
 # Слова-триггеры для каждого персонажа
