@@ -18,7 +18,7 @@ BOT_NAME = "Звёздный оракул"
 async def ask_ai(system_prompt: str, user_message: str) -> str:
     async with httpx.AsyncClient(timeout=90) as client:
         r = await client.post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}",
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}",
             headers={"Content-Type": "application/json"},
             json={
                 "system_instruction": {"parts": [{"text": system_prompt}]},
