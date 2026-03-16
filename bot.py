@@ -240,10 +240,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     original_text = update.message.text
+    is_private = update.effective_chat.type == "private"
     character = detect_character(original_text)
 
+    # В личке отвечаем всегда (Астрологикус по умолчанию)
+    # В группе — только по триггерам
     if not character:
-        return
+        if is_private:
+            character = "guru"
+        else:
+            return
 
     user_name = update.message.from_user.first_name or "друг"
     clean_text = clean_message(original_text)
