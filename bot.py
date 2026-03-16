@@ -18,17 +18,22 @@ BOT_NAME = "Звёздный оракул"
 async def ask_ai(system_prompt: str, user_message: str) -> str:
     async with httpx.AsyncClient(timeout=90) as client:
         r = await client.post(
-            "https://api.openai.com/v1/responses",
+            "https://api.openai.com/v1/chat/completions",
             headers={"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"},
-            json={"model": "gpt-5-nano", "input": f"{system_prompt}\n\n{user_message}", "store": True}
+            json={
+                "model": "gpt-4o-mini",
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message}
+                ]
+            }
         )
         d = r.json()
-        for item in d.get("output", []):
-            if item.get("type") == "message":
-                for c in item.get("content", []):
-                    if c.get("type") == "output_text":
-                        return c["text"]
-    return None
+        logger.info(f"OpenAI response status: {r.status_code}")
+        if r.status_code != 200:
+            logger.error(f"OpenAI error: {d}")
+            return None
+        return d["choices"][0]["message"]["content"]
 
 # Слова-триггеры для каждого персонажа
 GURU_TRIGGERS = [
