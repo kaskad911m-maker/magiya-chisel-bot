@@ -4,7 +4,8 @@ import logging
 import httpx
 from dotenv import load_dotenv
 from telegram import Update
-from telegram.ext import Application, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.constants import ParseMode
 
 load_dotenv()
 
@@ -236,6 +237,58 @@ def clean_message(text: str) -> str:
 
 ALLOWED_GROUP = "@magiya_chisel8"
 
+
+def _chat_allowed_for_bot(chat) -> bool:
+    if chat.type == "private":
+        return True
+    if chat.username and f"@{chat.username}".lower() == ALLOWED_GROUP.lower():
+        return True
+    return False
+
+
+WELCOME_HTML = """Привет! Я бот чата «Магия цифр» ✨
+
+<b>Как задать вопрос</b>
+• Укажи <b>дату рождения</b> в виде ДД.ММ.ГГГГ (например, 09.11.1972).
+• По желанию — <b>имя</b> и <b>пол</b> (мужской/женский), чтобы формулировки совпали.
+• Напиши, <b>к кому обращаешься</b>:
+  — <b>Астрологикус</b>, Великий Гуру, Гуру — тёплый нумерологический ответ;
+  — <b>Детектив Арви</b>, Арви — стратегия и «детективный» тон.
+
+<b>Пример в личке:</b>
+<i>Астрологикус, привет! Я Марина, 09.11.1972, вопрос про работу…</i>
+
+<b>Пример к Арви:</b>
+<i>Детектив Арви, 15.03.1990, мужской, не могу выбрать между двумя проектами…</i>
+
+<b>В личном чате</b> со мной можно написать вопрос с датой <b>без имени персонажа</b> — по умолчанию ответит Астрологикус.
+
+<b>В группе</b> @magiya_chisel8 обязательно обратись к персонажу по имени или тегу <code>#запросгуру</code> / <code>#запросарви</code> — иначе я не отвечаю, чтобы не перебивать беседу.
+
+Пиши <b>текстом</b> (не голосом). Команды: /start и /help — эта памятка.
+
+Мини-приложение с расчётом кода — бот @marina_kod_bot (кнопка «Мой код»)."""
+
+
+async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    chat = update.effective_chat
+    if not _chat_allowed_for_bot(chat):
+        return
+
+    logger.info("cmd_start magiya bot chat=%s", chat.id)
+    await update.message.reply_text(WELCOME_HTML, parse_mode=ParseMode.HTML)
+
+
+async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.message:
+        return
+    if not _chat_allowed_for_bot(update.effective_chat):
+        return
+    await update.message.reply_text(WELCOME_HTML, parse_mode=ParseMode.HTML)
+
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
         return
@@ -244,8 +297,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     is_private = chat.type == "private"
     is_allowed_group = chat.username and f"@{chat.username}".lower() == ALLOWED_GROUP.lower()
 
-    # Разрешаем только личку и чат "Магия цифр"
-    if not is_private and not is_allowed_group:
+    if not _chat_allowed_for_bot(chat):
         return
 
     original_text = update.message.text
@@ -292,6 +344,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     app = Application.builder().token(TELEGRAM_TOKEN).build()
+    # group=-1: /start и /help не теряются среди других хендлеров
+    app.add_handler(CommandHandler("start", cmd_start), group=-1)
+    app.add_handler(CommandHandler("help", cmd_help), group=-1)
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     logger.info(f"Бот «{BOT_NAME}» запущен. Слушаю Астрологикуса и Арви...")
     app.run_polling()
